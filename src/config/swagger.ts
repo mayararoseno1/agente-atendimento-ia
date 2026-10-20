@@ -52,6 +52,31 @@ const options: swaggerJsdoc.Options = {
         },
       },
     },
+     Product: {
+          type: "object",
+          properties: {
+            id: { type: "integer", example: 1 },
+            title: {
+              type: "string",
+              example: "Fjallraven Backpack",
+            },
+            price: { type: "number", example: 109.95 },
+            description: {
+              type: "string",
+              example: "Mochila para uso diário",
+            },
+            category: {
+              type: "string",
+              example: "men's clothing",
+            },
+            image: {
+              type: "string",
+              format: "uri",
+              example: "https://example.com/product.png",
+            },
+          },
+        },
+
     paths: {
       "/orders/{id}": {
         get: {
@@ -107,12 +132,50 @@ const options: swaggerJsdoc.Options = {
               },
             },
           },
+          
           responses: {
             200: { description: "Pedido cancelado com sucesso" },
             400: { description: "Dados inválidos ou confirmação ausente" },
             403: { description: "Identificação do cliente não corresponde" },
             404: { description: "Pedido não encontrado" },
             409: { description: "Pedido não pode ser cancelado" },
+          },
+        },
+      },
+
+      // NOVA ROTA: Consulta de produtos
+      "/products/{id}": {
+        get: {
+          summary: "Consultar produto",
+          description:
+            "Consulta informações complementares na Fake Store API.",
+          tags: ["Produtos"],
+          parameters: [
+            {
+              name: "id",
+              in: "path",
+              required: true,
+              schema: {
+                type: "integer",
+                minimum: 1,
+              },
+              description: "Identificador do produto",
+            },
+          ],
+          responses: {
+            200: {
+              description: "Produto encontrado",
+              content: {
+                "application/json": {
+                  schema: {
+                    $ref: "#/components/schemas/Product",
+                  },
+                },
+              },
+            },
+            400: { description: "Identificador inválido" },
+            404: { description: "Produto não encontrado" },
+            502: { description: "Falha na API externa" },
           },
         },
       },
