@@ -1,5 +1,6 @@
 
 import { Router } from "express";
+import { logger } from "../config/logger.js";
 import { cancelOrder, findOrderById } from "../services/orderService.js";
 
 export const orderRouter = Router();
@@ -79,6 +80,15 @@ orderRouter.post("/:id/cancel", (req, res) => {
 
   const result = cancelOrder(id);
 
+  logger.info(
+    {
+      event: "order_cancellation",
+      orderId: id,
+      outcome: result.success ? "success" : result.reason,
+    },
+    "Tentativa de cancelamento processada"
+  );
+  
   if (!result.success) {
     res.status(409).json({
       error: "ORDER_NOT_CANCELLABLE",
