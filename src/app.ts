@@ -1,6 +1,8 @@
 
 import express from "express";
 import { orderRouter } from "./routes/orderRoutes.js";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./config/swagger.js";
 
 export const app = express();
 
@@ -12,5 +14,7 @@ app.get("/health", (_req, res) => {
     service: "agente-atendimento-ia",
   });
 });
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use("/orders", orderRouter);
