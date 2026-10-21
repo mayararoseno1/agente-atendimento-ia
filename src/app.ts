@@ -1,6 +1,7 @@
 
 import express from "express";
 import pinoHttpModule from "pino-http";
+import { chatRouter } from "./routes/chatRoutes.js";
 import { productRouter } from "./routes/productRoutes.js";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
@@ -51,3 +52,5 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/orders", orderRouter);
 
 app.use("/products", productRouter);
+
+app.use("/chat", chatRouter);
