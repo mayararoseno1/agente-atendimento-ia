@@ -7,12 +7,38 @@ const sendButton = document.getElementById("send-button");
 // Identidade fictícia usada apenas no simulador local.
 const customerId = "CUS-001";
 
+// Renderiza negrito e itálico sem executar HTML da IA.
 function addMessage(text, sender) {
   const bubble = document.createElement("div");
   bubble.classList.add("message", sender);
 
-  // textContent evita interpretar HTML enviado pelo usuário ou IA.
-  bubble.textContent = text;
+  if (sender === "user") {
+    bubble.textContent = text;
+  } else {
+    const pattern = /(\*\*([^*\n]+)\*\*|\*([^*\n]+)\*)/g;
+    let lastIndex = 0;
+
+    for (const match of text.matchAll(pattern)) {
+      const index = match.index;
+
+      bubble.appendChild(
+        document.createTextNode(text.slice(lastIndex, index))
+      );
+
+      const element = document.createElement(
+        match[2] !== undefined ? "strong" : "em"
+      );
+
+      element.textContent = match[2] ?? match[3];
+      bubble.appendChild(element);
+
+      lastIndex = index + match[0].length;
+    }
+
+    bubble.appendChild(
+      document.createTextNode(text.slice(lastIndex))
+    );
+  }
 
   messages.appendChild(bubble);
   messages.scrollTop = messages.scrollHeight;

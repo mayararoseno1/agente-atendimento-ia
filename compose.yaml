@@ -1,0 +1,13 @@
+
+services:
+  agente-atendimento:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: agente-atendimento-ia:local
+    container_name: agente-atendimento-ia
+    ports:
+      - "3001:3000"
+    env_file:
+      - .env
+    restart: unless-stopped
