@@ -1,0 +1,50 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atendimento IA | Simulador</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<script src="/chat.js" defer></script>
+<body>
+  <main class="chat-container">
+    <header class="chat-header">
+      <div class="avatar">IA</div>
+
+      <div class="chat-info">
+        <h1>Atendimento IA</h1>
+        <p>Simulador de atendimento</p>
+      </div>
+    </header>
+
+    <section
+      id="messages"
+      class="chat-messages"
+      aria-label="Mensagens da conversa"
+      aria-live="polite"
+    >
+      <div class="message bot">
+        Olá! 👋 Sou o assistente virtual da loja.
+        Posso ajudar com pedidos e produtos.
+      </div>
+    </section>
+
+    <form id="chat-form" class="chat-input-area">
+      <input
+        id="message-input"
+        type="text"
+        placeholder="Digite sua mensagem..."
+        autocomplete="off"
+        aria-label="Mensagem"
+        required
+      />
+
+      <button type="submit" id="send-button">
+        Enviar
+      </button>
+    </form>
+  </main>
+</body>
+</html>

@@ -1,7 +1,12 @@
 
 import { Router } from "express";
 import { logger } from "../config/logger.js";
-import { cancelOrder, findOrderById } from "../services/orderService.js";
+import { findOrderById } from "../services/orderService.js";
+import {
+  requestCancellation,
+  confirmPendingCancellation,
+} from "../services/cancellationConfirmationService.js";
+
 
 export const orderRouter = Router();
 
@@ -33,6 +38,49 @@ orderRouter.get("/:id", (req, res) => {
     productId: order.productId,
     quantity: order.quantity,
     createdAt: order.createdAt,
+  });
+});
+
+
+orderRouter.post("/:id/cancellation-request", (req, res) => {
+  const id = req.params.id;
+  const customerId = req.body?.customerId;
+
+  if (typeof id !== "string" || !/^ORD-\d{3}$/.test(id)) {
+    res.status(400).json({
+      error: "INVALID_ORDER_ID",
+      message: "O identificador do pedido é inválido.",
+    });
+    return;
+  }
+
+  if (typeof customerId !== "string" || !customerId.trim()) {
+    res.status(400).json({
+      error: "INVALID_CUSTOMER_ID",
+      message: "A identificação do cliente é obrigatória.",
+    });
+    return;
+  }
+
+  const result = requestCancellation(customerId, id);
+
+  if (!result.success) {
+    const status = result.reason === "ORDER_NOT_FOUND" ? 404 : 409;
+
+    res.status(status).json({
+      error: result.reason,
+      message:
+        result.reason === "ORDER_NOT_FOUND"
+          ? "Pedido não encontrado para este cliente."
+          : "Este pedido não pode ser cancelado.",
+    });
+    return;
+  }
+
+  res.status(200).json({
+    orderId: result.orderId,
+    confirmationRequired: true,
+    message: `Você confirma o cancelamento do pedido ${result.orderId}?`,
   });
 });
 
@@ -78,7 +126,7 @@ orderRouter.post("/:id/cancel", (req, res) => {
     return;
   }
 
-  const result = cancelOrder(id);
+  const result = confirmPendingCancellation(req.body.customerId, id);
 
   logger.info(
     {
@@ -91,15 +139,15 @@ orderRouter.post("/:id/cancel", (req, res) => {
   
   if (!result.success) {
     res.status(409).json({
-      error: "ORDER_NOT_CANCELLABLE",
+      error: result.reason,
       message: "Este pedido não pode ser cancelado no estado atual.",
     });
     return;
   }
 
   res.status(200).json({
-    id: result.order.id,
-    status: result.order.status,
-    message: "Pedido cancelado com sucesso.",
-  });
+  id: result.orderId,
+  status: result.status,
+  message: "Pedido cancelado com sucesso.",
+});
 });

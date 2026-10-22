@@ -38,6 +38,15 @@ describe("API de pedidos", () => {
 
   describe("POST /orders/:id/cancel", () => {
     it("cancela pedido em processamento", async () => {
+
+const requestResponse = await request(app)
+  .post("/orders/ORD-001/cancellation-request")
+  .send({
+    customerId: "CUS-001",
+  });
+
+expect(requestResponse.status).toBe(200);
+expect(requestResponse.body.confirmationRequired).toBe(true);
       const response = await request(app)
         .post("/orders/ORD-001/cancel")
         .send({
@@ -107,5 +116,46 @@ describe("API de pedidos", () => {
 
       expect(response.status).toBe(409);
     });
+
+it("impede cancelamento sem solicitação prévia", async () => {
+  const response = await request(app)
+    .post("/orders/ORD-001/cancel")
+    .send({
+      customerId: "CUS-001",
+      confirmed: true,
+    });
+
+  expect(response.status).toBe(409);
+  expect(response.body.error).toBe("CONFIRMATION_REQUIRED");
+  expect(orders[0].status).toBe("processing");
+});
+
+it("impede reutilizar uma confirmação de cancelamento", async () => {
+  const solicitation = await request(app)
+    .post("/orders/ORD-001/cancellation-request")
+    .send({ customerId: "CUS-001" });
+
+  expect(solicitation.status).toBe(200);
+
+  const firstConfirmation = await request(app)
+    .post("/orders/ORD-001/cancel")
+    .send({
+      customerId: "CUS-001",
+      confirmed: true,
+    });
+
+  expect(firstConfirmation.status).toBe(200);
+  expect(orders[0].status).toBe("cancelled");
+
+  const secondConfirmation = await request(app)
+    .post("/orders/ORD-001/cancel")
+    .send({
+      customerId: "CUS-001",
+      confirmed: true,
+    });
+
+  expect(secondConfirmation.status).toBe(409);
+  expect(secondConfirmation.body.error).toBe("CONFIRMATION_REQUIRED");
+});
   });
 });
