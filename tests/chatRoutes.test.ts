@@ -91,4 +91,27 @@ describe("POST /chat", () => {
       reason: "AGENT_UNAVAILABLE",
     });
   });
+
+it("retorna 504 quando o agente excede o tempo limite", async () => {
+  mockedProcessAgentMessage.mockRejectedValueOnce(
+    new DOMException(
+      "The operation was aborted due to timeout",
+      "TimeoutError"
+    )
+  );
+
+  const response = await request(app)
+    .post("/chat")
+    .send({
+      customerId: "CUS-001",
+      message: "Qual é o status do pedido ORD-001?",
+    });
+
+  expect(response.status).toBe(504);
+  expect(response.body).toMatchObject({
+    success: false,
+    reason: "AGENT_TIMEOUT",
+  });
+});
+
 });

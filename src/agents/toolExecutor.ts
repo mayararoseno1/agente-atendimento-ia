@@ -3,6 +3,7 @@ import { z } from "zod";
 import { consultarPedidoTool } from "../tools/orderTools.js";
 import { consultarProdutoTool } from "../tools/productTools.js";
 import { findOrderById } from "../services/orderService.js";
+import { requestCancellation } from "../services/cancellationConfirmationService.js";
 
 const orderArgsSchema = z.object({
   orderId: z.string().regex(/^ORD-\d{3}$/),
@@ -62,6 +63,41 @@ export async function executeTool(
       await consultarProdutoTool.invoke(validation.data)
     );
   }
+
+if (name === "solicitar_cancelamento") {
+  const validation = orderArgsSchema.safeParse(args);
+
+  if (!validation.success) {
+    return JSON.stringify({
+      success: false,
+      reason: "INVALID_ARGUMENTS",
+      message: "Identificador do pedido inválido.",
+    });
+  }
+
+  const result = requestCancellation(
+    context.customerId,
+    validation.data.orderId
+  );
+
+  if (!result.success) {
+    return JSON.stringify({
+      success: false,
+      reason: result.reason,
+      message:
+        result.reason === "ORDER_NOT_FOUND"
+          ? "Pedido não encontrado para este cliente."
+          : "Este pedido não pode ser cancelado.",
+    });
+  }
+
+  return JSON.stringify({
+    success: true,
+    orderId: result.orderId,
+    confirmationRequired: true,
+    message: `Pergunte ao cliente se confirma o cancelamento do pedido ${result.orderId}. Não cancele ainda.`,
+  });
+}
 
 if (name === "cancelar_pedido") {
   return JSON.stringify({

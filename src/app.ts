@@ -1,5 +1,5 @@
-
 import express from "express";
+import path from "node:path";
 import pinoHttpModule from "pino-http";
 import { chatRouter } from "./routes/chatRoutes.js";
 import { productRouter } from "./routes/productRoutes.js";
@@ -12,6 +12,7 @@ import { logger } from "./config/logger.js";
 import swaggerUi from "swagger-ui-express";
 
 export const app = express();
+app.use(express.static(path.resolve(process.cwd(), "public")));
 
 // Middleware de logs estruturados
 const pinoHttp = pinoHttpModule.default ?? pinoHttpModule;

@@ -13,9 +13,9 @@ async function main() {
       "Não invente informações e não afirme que executou ações " +
       "sem confirmação do backend."
     ),
+
     new HumanMessage(
-      "Qual é o status do pedido ORD-001?"
-    ),
+  "Qual é o status do pedido ORD-001?"),
   ]);
 
   console.log("Resposta textual:", response.text);

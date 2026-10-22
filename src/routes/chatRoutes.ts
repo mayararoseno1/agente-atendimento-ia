@@ -25,17 +25,35 @@ chatRouter.post("/", async (req, res) => {
 
   const { message, customerId } = validation.data;
 
-  try {
-    const reply = await processAgentMessage(message, {
-      customerId,
-    });
+try {
+  console.log("[CHAT] Iniciando processamento do agente");
 
-    res.status(200).json({
-      success: true,
-      reply,
-    });
-  } catch {
-    res.status(503).json({
+  const reply = await processAgentMessage(message, { customerId });
+
+  console.log("[CHAT] Processamento do agente concluído");
+
+  res.status(200).json({ success: true, reply });
+
+  } catch (error) {
+  console.error("[CHAT] Falha no processamento:", error);
+
+    const isTimeout =
+    error instanceof Error &&
+    (error.name === "TimeoutError" ||
+    error.name === "AbortError" ||
+    /timed out|timeout|aborted/i.test(error.message));
+
+    if (isTimeout) {
+    res.status(504).json({
+    success: false,
+    reason: "AGENT_TIMEOUT",
+    message:
+      "O atendimento demorou mais que o esperado. Tente novamente ou solicite atendimento humano.",
+  });
+  return;
+}
+
+  res.status(503).json({
       success: false,
       reason: "AGENT_UNAVAILABLE",
       message:

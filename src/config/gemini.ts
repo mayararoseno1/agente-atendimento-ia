@@ -11,9 +11,13 @@ export function createGeminiModel() {
     );
   }
 
+
+
   return new ChatGoogleGenerativeAI({
     model: "gemini-3.8-flash",
     apiKey,
     temperature: 0,
+    maxRetries: 0,
   });
+
 }
