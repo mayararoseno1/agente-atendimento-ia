@@ -12,8 +12,8 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: "http://localhost:3000",
-        description: "Ambiente de desenvolvimento",
+        url: "/",
+        description: "Servidor atual (local ou Docker)",
       },
     ],
     components: {
@@ -50,9 +50,7 @@ const options: swaggerJsdoc.Options = {
             },
           },
         },
-      },
-    },
-     Product: {
+        Product: {
           type: "object",
           properties: {
             id: { type: "integer", example: 1 },
@@ -76,7 +74,8 @@ const options: swaggerJsdoc.Options = {
             },
           },
         },
-
+      },
+    },
     paths: {
       "/orders/{id}": {
         get: {
@@ -132,7 +131,6 @@ const options: swaggerJsdoc.Options = {
               },
             },
           },
-          
           responses: {
             200: { description: "Pedido cancelado com sucesso" },
             400: { description: "Dados inválidos ou confirmação ausente" },
@@ -142,8 +140,6 @@ const options: swaggerJsdoc.Options = {
           },
         },
       },
-
-      // NOVA ROTA: Consulta de produtos
       "/products/{id}": {
         get: {
           summary: "Consultar produto",
