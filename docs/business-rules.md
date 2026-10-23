@@ -38,7 +38,7 @@ As decisões abaixo são hipóteses técnicas para viabilizar o protótipo. Não
 2. Cada pedido terá um identificador único e um status.
 3. Os status iniciais do protótipo serão `processing`, `shipped` e `cancelled`, correspondentes a em processamento, enviado e cancelado.
 4. A API principal será a única responsável por autorizar e efetivar o cancelamento.
-5. A confirmação deverá ocorrer na conversa atual, estar claramente relacionada ao pedido e à intenção de cancelar, e terá validade provisória de cinco minutos. Após esse prazo, será necessário iniciar uma nova solicitação de cancelamento.
+5. A confirmação deverá estar claramente relacionada ao pedido e à intenção de cancelar. O protótipo manterá a solicitação pendente em memória, sem prazo de expiração automático. Antes de efetivar o cancelamento, o backend verificará novamente a identidade do cliente e o status atual do pedido. A solicitação pendente será removida após confirmação processada ou recusa do cliente.
 6. Se o pedido não for encontrado, a API retornar erro ou o status não for reconhecido, o agente não executará o cancelamento.
 7. O atendimento humano será representado por uma resposta de encaminhamento, sem integração com uma equipe real.
 8. A Fake Store API será usada exclusivamente para informações complementares sobre produtos.

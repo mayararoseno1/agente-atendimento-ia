@@ -135,8 +135,8 @@ if (pending) {
     }
 
     return result.reason === "CONFIRMATION_REQUIRED"
-      ? "A confirmação expirou ou não está disponível. Solicite o cancelamento novamente."
-      : "Não foi possível cancelar o pedido no estado atual.";
+    ? "Não há uma confirmação de cancelamento válida para este pedido. Solicite o cancelamento novamente."
+    : "Não foi possível cancelar o pedido no estado atual.";
   }
 
   if (intent === "DENY") {

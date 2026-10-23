@@ -1,14 +1,11 @@
+
 import { randomUUID } from "node:crypto";
 import { cancelOrder, findOrderById } from "./orderService.js";
-
-const CONFIRMATION_TIMEOUT_MS = 5 * 60 * 1000;
-
 
 type PendingCancellation = {
   requestId: string;
   orderId: string;
   customerId: string;
-  expiresAt: number;
 };
 
 const pendingCancellations = new Map<string, PendingCancellation>();
@@ -40,13 +37,11 @@ export function requestCancellation(
     };
   }
 
-pendingCancellations.set(customerId, {
-  requestId: randomUUID(),
-  customerId,
-  orderId,
-  expiresAt: Date.now() + CONFIRMATION_TIMEOUT_MS,
-});
-
+  pendingCancellations.set(customerId, {
+    requestId: randomUUID(),
+    customerId,
+    orderId,
+  });
 
   return {
     success: true,
@@ -54,31 +49,17 @@ pendingCancellations.set(customerId, {
   };
 }
 
-
 export function getPendingCancellation(
   customerId: string
 ): PendingCancellation | undefined {
-  const pending = pendingCancellations.get(customerId);
-
-  if (!pending) {
-    return undefined;
-  }
-
-  if (Date.now() >= pending.expiresAt) {
-    pendingCancellations.delete(customerId);
-    return undefined;
-  }
-
-  return pending;
+  return pendingCancellations.get(customerId);
 }
-
 
 export function clearPendingCancellation(
   customerId: string
 ): void {
   pendingCancellations.delete(customerId);
 }
-
 
 export type ConfirmCancellationResult =
   | { success: true; orderId: string; status: "cancelled" }

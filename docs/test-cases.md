@@ -64,7 +64,7 @@ As evidências indicadas são referências de implementação ou de testes ident
 
 | ID | Objetivo | Cenário | Condições relevantes | Comportamento esperado |
 |---|---|---|---|---|
-| CT-30 | Expirar confirmações antigas | Cliente confirma após cinco minutos | Solicitação pendente expirada | Sistema rejeita confirmação e não cancela |
+| CT-30 | Validar confirmação sem expiração automática | Cliente confirma após mais de cinco minutos | Solicitação pendente, pedido ainda em processamento e pertencente ao cliente | Backend aceita a confirmação válida, revalida o pedido e efetua o cancelamento |
 | CT-31 | Impedir reutilização | Cliente tenta confirmar novamente | Confirmação já consumida | Sistema bloqueia nova operação |
 | CT-32 | Impedir confirmação para outro pedido | Cliente tenta trocar o pedido durante confirmação | Solicitação pendente vinculada a outro ID | Sistema não cancela o pedido diferente |
 | CT-33 | Impedir autorização fabricada pelo modelo | Gemini envia `confirmed: true` sem confirmação válida | Nenhuma solicitação pendente autorizada | Executor de ferramentas bloqueia cancelamento |
@@ -76,7 +76,7 @@ As evidências indicadas são referências de implementação ou de testes ident
 
 ### Testes automatizados
 
-Na última validação realizada, o projeto apresentou **78 testes aprovados em 12 arquivos de teste**.
+Na última validação realizada, o projeto apresentou **75 testes aprovados em 11 arquivos de teste**, sem falhas.
 
 Os testes automatizados abrangem regras de negócio, endpoints HTTP, ferramentas do agente, confirmação de cancelamento, autorização, validação de entradas e tratamento de falhas.
 
@@ -85,14 +85,13 @@ Arquivos relevantes:
 - `tests/orderRoutes.test.ts`: consultas, validação de IDs, cancelamentos e restrições da API.
 - `tests/orderService.test.ts`: estados e regras de cancelamento.
 - `tests/orderTools.test.ts`: consultas por ferramentas e proteção de dados.
-- `tests/cancellationConfirmationService.test.ts`: validade, expiração e consumo de confirmações.
+- `tests/cancellationConfirmationService.test.ts`: registro de solicitações pendentes, confirmação obrigatória, ausência de expiração automática, revalidação do status e prevenção de reutilização.
 - `tests/agentService.test.ts`: confirmação conversacional, respostas ambíguas, falhas e limites de execução.
 - `tests/toolExecutor.test.ts`: autorização, validação e bloqueio de chamadas indevidas.
 - `tests/chatRoutes.test.ts`: validação, respostas e erros do chat.
 - `tests/productRoutes.test.ts`: endpoints de produtos e erros HTTP.
 - `tests/productService.test.ts`: integração externa, falhas e validação de respostas.
 - `tests/productTools.test.ts`: consultas de produtos via ferramentas.
-- `tests/cancellationNotificationService.test.ts`: mensagens de lembrete e expiração.
 - `tests/cancellationIntentService.test.ts`: classificação das intenções de confirmação, recusa e respostas ambíguas ou inseguras.
 
 Comando de execução:
@@ -120,6 +119,7 @@ A existência de testes unitários não substitui a avaliação do comportamento
 ## 9. Limitações
 
 - Pedidos e confirmações são armazenados em memória.
+- As solicitações de cancelamento pendentes não possuem expiração automática neste protótipo. Elas são removidas após o processamento da confirmação, recusa do cliente ou reinicialização da aplicação.
 - O protótipo não implementa autenticação real.
 - O encaminhamento humano é simulado.
 - A disponibilidade do Gemini e da Fake Store API depende de serviços externos.

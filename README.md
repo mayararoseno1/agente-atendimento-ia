@@ -275,7 +275,7 @@ npm test
 
 Na última validação da branch `develop`, o projeto apresentou:
 
-**78 testes aprovados em 12 arquivos de teste.**
+**75 testes aprovados em 11 arquivos de teste.**
 
 Os testes abrangem:
 
