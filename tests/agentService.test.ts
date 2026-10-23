@@ -18,9 +18,15 @@ import {
 import { orders } from "../src/data/orders.js";
 import { processAgentMessage } from "../src/services/agentService.js";
 
-const { invokeMock, executeToolMock } = vi.hoisted(() => ({
+
+const {
+  invokeMock,
+  executeToolMock,
+  classifyIntentMock,
+} = vi.hoisted(() => ({
   invokeMock: vi.fn(),
   executeToolMock: vi.fn(),
+  classifyIntentMock: vi.fn(),
 }));
 
 vi.mock("../src/agents/customerAgent.js", () => ({
@@ -33,11 +39,21 @@ vi.mock("../src/agents/toolExecutor.js", () => ({
   executeTool: executeToolMock,
 }));
 
+vi.mock("../src/services/cancellationIntentService.js", () => ({
+  classifyCancellationIntent: classifyIntentMock,
+}));
+
+
 describe("Serviço do agente", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    clearPendingCancellation("CUS-001");
-  });
+
+beforeEach(() => {
+  vi.resetAllMocks();
+
+  classifyIntentMock.mockResolvedValue("UNCLEAR");
+
+  clearPendingCancellation("CUS-001");
+});
+
 
   afterEach(() => {
     clearPendingCancellation("CUS-001");
@@ -380,7 +396,8 @@ describe("Serviço do agente", () => {
     expect(executeToolMock).not.toHaveBeenCalled();
   });
 
-it("não cancela o pedido quando o cliente responde apenas Sim", async () => {
+
+it("cancela o pedido quando o cliente responde Sim a uma confirmação pendente", async () => {
   const order = orders.find(
     (item) => item.id === "ORD-001"
   );
@@ -405,22 +422,143 @@ it("não cancela o pedido quando o cliente responde apenas Sim", async () => {
     { customerId: "CUS-001" }
   );
 
-  // A resposta genérica não pode cancelar o pedido.
-  expect(order.status).toBe("processing");
+  // O backend autoriza o cancelamento após confirmação.
+  expect(order.status).toBe("cancelled");
 
-  // O backend deve solicitar confirmação explícita.
+  // A resposta deve refletir o resultado real da operação.
   expect(response).toContain(
-    "Você confirma o cancelamento?"
+    "O pedido ORD-001 foi cancelado com sucesso."
   );
 
-  // A solicitação deve continuar pendente.
+  // A confirmação é consumida após o cancelamento.
+  expect(
+    getPendingCancellation("CUS-001")
+  ).toBeUndefined();
+
+  // Respostas simples não precisam de classificação pelo Gemini.
+  expect(invokeMock).not.toHaveBeenCalled();
+  expect(executeToolMock).not.toHaveBeenCalled();
+});
+
+it("não cancela o pedido pendente quando o cliente menciona outro pedido", async () => {
+  const order = orders.find(
+    (item) => item.id === "ORD-001"
+  );
+
+  expect(order).toBeDefined();
+
+  if (!order) {
+    throw new Error("Pedido de teste não encontrado.");
+  }
+
+  order.status = "processing";
+
+  const request = requestCancellation(
+    "CUS-001",
+    "ORD-001"
+  );
+
+  expect(request.success).toBe(true);
+
+  const response = await processAgentMessage(
+    "Sim, mas quero cancelar o ORD-002",
+    { customerId: "CUS-001" }
+  );
+
+  expect(order.status).toBe("processing");
+
+  expect(response).toContain(
+    "Você mencionou outro pedido"
+  );
+
   expect(
     getPendingCancellation("CUS-001")?.orderId
   ).toBe("ORD-001");
 
-  // Não deve depender do Gemini.
   expect(invokeMock).not.toHaveBeenCalled();
   expect(executeToolMock).not.toHaveBeenCalled();
+});
+
+it("não cancela quando o Gemini interpreta incorretamente uma mensagem contraditória", async () => {
+  const order = orders.find(
+    (item) => item.id === "ORD-001"
+  );
+
+  if (!order) {
+    throw new Error("Pedido de teste não encontrado.");
+  }
+
+  order.status = "processing";
+
+  const request = requestCancellation(
+    "CUS-001",
+    "ORD-001"
+  );
+
+  expect(request.success).toBe(true);
+
+  // Simula uma interpretação incorreta do Gemini.
+  classifyIntentMock.mockResolvedValue("CONFIRM");
+
+  const response = await processAgentMessage(
+    "Sim, mas não quero cancelar o pedido.",
+    { customerId: "CUS-001" }
+  );
+
+  // O backend deve impedir o cancelamento.
+  expect(order.status).toBe("processing");
+
+  // A confirmação pendente deve permanecer disponível.
+  expect(
+    getPendingCancellation("CUS-001")?.orderId
+  ).toBe("ORD-001");
+
+  expect(response).toContain(
+    "Você confirma o cancelamento?"
+  );
+
+  
+expect(classifyIntentMock).not.toHaveBeenCalled();
+});
+
+it("não cancela quando a confirmação depende de uma condição", async () => {
+  const order = orders.find(
+    (item) => item.id === "ORD-001"
+  );
+
+  if (!order) {
+    throw new Error("Pedido de teste não encontrado.");
+  }
+
+  order.status = "processing";
+
+  const request = requestCancellation(
+    "CUS-001",
+    "ORD-001"
+  );
+
+  expect(request.success).toBe(true);
+
+  // Simula o Gemini interpretando a mensagem como confirmação.
+  classifyIntentMock.mockResolvedValue("CONFIRM");
+
+  const response = await processAgentMessage(
+    "Sim, pode cancelar se chegar amanhã.",
+    { customerId: "CUS-001" }
+  );
+
+  expect(order.status).toBe("processing");
+
+  expect(
+    getPendingCancellation("CUS-001")?.orderId
+  ).toBe("ORD-001");
+
+  expect(response).toContain(
+    "Você confirma o cancelamento?"
+  );
+
+  // O backend identifica a condição antes de consultar a IA.
+  expect(classifyIntentMock).not.toHaveBeenCalled();
 });
 
 });

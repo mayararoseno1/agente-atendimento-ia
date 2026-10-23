@@ -14,6 +14,7 @@ import {
   confirmPendingCancellation,
   clearPendingCancellation,
 } from "../services/cancellationConfirmationService.js";
+import { classifyCancellationIntent } from "./cancellationIntentService.js";
 
 const SYSTEM_PROMPT = `
 Você é um assistente de atendimento de uma loja.
@@ -49,7 +50,29 @@ export async function processAgentMessage(
 
 const pending = getPendingCancellation(context.customerId);
 
+
 if (pending) {
+
+  const safetyMessage = message
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+
+  const hasNegativeCancellation =
+    /\b(nao quero cancelar|nao cancele|nao cancelar|sem cancelar|desisti de cancelar)\b/.test(
+      safetyMessage
+    );
+
+  const hasConditionalCancellation =
+    /\b(se|caso|somente se|so se|apenas se|desde que)\b/.test(
+      safetyMessage
+    );
+
+  if (hasNegativeCancellation || hasConditionalCancellation) {
+    return `Existe uma solicitação de cancelamento pendente para o pedido ${pending.orderId}. Sua resposta contém uma condição ou negação. Você confirma o cancelamento? Responda "Sim, confirmo" ou "Não".`;
+  }
+
   const normalizedMessage = message
     .trim()
     .toLowerCase()
@@ -57,11 +80,27 @@ if (pending) {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[.!?]+$/g, "");
 
+  const mentionedOrderIds =
+    message.toUpperCase().match(/\bORD-\d+\b/g) ?? [];
+
+  const mentionsDifferentOrder = mentionedOrderIds.some(
+    (orderId) => orderId !== pending.orderId.toUpperCase()
+  );
+
+  if (mentionsDifferentOrder) {
+    return `Existe uma solicitação de cancelamento pendente para o pedido ${pending.orderId}. Você mencionou outro pedido. Para sua segurança, confirme especificamente o cancelamento do pedido ${pending.orderId} ou responda "Não".`;
+  }
+
   const confirmations = [
-  "sim, confirmo",
-  "confirmo o cancelamento",
-  `confirmo o cancelamento do pedido ${pending.orderId.toLowerCase()}`,
-  "sim, pode cancelar",
+    "sim",
+    "sim, confirmo",
+    "sim confirmo",
+    "confirmo",
+    "confirmo o cancelamento",
+    `confirmo o cancelamento do pedido ${pending.orderId.toLowerCase()}`,
+    `sim, confirmo o cancelamento do pedido ${pending.orderId.toLowerCase()}`,
+    "sim, pode cancelar",
+    "pode cancelar",
   ];
 
   const refusals = [
@@ -72,7 +111,20 @@ if (pending) {
     "manter pedido",
   ];
 
+  let intent: "CONFIRM" | "DENY" | "UNCLEAR";
+
   if (confirmations.includes(normalizedMessage)) {
+    intent = "CONFIRM";
+  } else if (refusals.includes(normalizedMessage)) {
+    intent = "DENY";
+  } else {
+    intent = await classifyCancellationIntent(
+      message,
+      pending.orderId
+    );
+  }
+
+  if (intent === "CONFIRM") {
     const result = confirmPendingCancellation(
       context.customerId,
       pending.orderId
@@ -87,7 +139,7 @@ if (pending) {
       : "Não foi possível cancelar o pedido no estado atual.";
   }
 
-  if (refusals.includes(normalizedMessage)) {
+  if (intent === "DENY") {
     clearPendingCancellation(context.customerId);
 
     return `Tudo bem! A solicitação de cancelamento do pedido ${pending.orderId} foi descartada.`;
@@ -95,6 +147,7 @@ if (pending) {
 
   return `Existe uma solicitação de cancelamento pendente para o pedido ${pending.orderId}. Você confirma o cancelamento? Responda "Sim, confirmo" ou "Não".`;
 }
+
   const agent = createCustomerAgent();
 
   const messages: BaseMessage[] = [
