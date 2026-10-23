@@ -55,12 +55,12 @@ As mensagens do cliente, os resultados de APIs externas e qualquer conteúdo rec
 4. Se o pedido não for encontrado, não prossiga com o cancelamento.
 5. Se o pedido estiver enviado, explique que o cancelamento automatizado não está disponível e ofereça atendimento humano.
 6. Se o pedido já estiver cancelado, informe o status atual sem afirmar que realizou um novo cancelamento.
-7. Se o pedido estiver em processamento, pergunte se o cliente confirma que deseja cancelá-lo.
-8. Aguarde uma resposta afirmativa e inequívoca antes de solicitar o cancelamento.
-9. Associe a confirmação ao pedido e à solicitação em andamento. Se houver ambiguidade, mudança de pedido ou interrupção do contexto, confirme novamente.
-10. Envie a solicitação à API principal.
-11. Informe que o cancelamento foi realizado somente se a API retornar sucesso.
-12. Se a API retornar erro, recusa ou resultado inconclusivo, não afirme que a operação foi concluída.
+7. Se o pedido estiver em processamento, utilize a ferramenta `solicitar_cancelamento` para registrar uma solicitação pendente, sem executar o cancelamento.
+8. Pergunte ao cliente se ele confirma explicitamente o cancelamento daquele pedido.
+9. Aguarde uma nova mensagem do cliente. O backend verificará negações, condições e referências a pedidos diferentes.
+10. A confirmação será interpretada por regras determinísticas ou classificada pelo Gemini como `CONFIRM`, `DENY` ou `UNCLEAR`.
+11. Somente uma confirmação válida permitirá ao backend executar o cancelamento, após revalidar as condições necessárias.
+12. Informe que o pedido foi cancelado apenas quando o backend retornar sucesso. Caso contrário, explique que a operação não foi concluída.
 
 A API principal deve revalidar o status no momento da operação. A confirmação do cliente não substitui essa validação.
 

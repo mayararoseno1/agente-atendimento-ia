@@ -67,6 +67,34 @@ Entre as regras implementadas estão:
 - Comunicação de sucesso somente após confirmação da API.
 - Tratamento de falhas sem afirmar que uma operação foi concluída.
 
+### Papel do modelo de IA e limites de execução
+
+O Google Gemini é utilizado para interpretar mensagens em linguagem natural, identificar solicitações e selecionar ferramentas de consulta ou solicitação de cancelamento.
+
+O modelo não é a fonte oficial dos dados dos pedidos e não possui autorização para executar diretamente operações sensíveis. As decisões de negócio e a execução do cancelamento permanecem sob responsabilidade do backend.
+
+**Fluxo de confirmação de cancelamento:**
+
+1. O cliente solicita o cancelamento de um pedido.
+2. O agente utiliza a ferramenta `solicitar_cancelamento`, que registra uma confirmação pendente, sem executar o cancelamento.
+3. O agente solicita confirmação explícita ao cliente.
+4. Na mensagem seguinte, o backend verifica negações, condições e referências a pedidos diferentes.
+5. Respostas reconhecidas diretamente são tratadas por regras determinísticas. Outras respostas podem ser classificadas pelo Gemini como `CONFIRM`, `DENY` ou `UNCLEAR`.
+6. Somente uma confirmação válida permite chamar `confirmPendingCancellation()`.
+7. O sucesso é comunicado exclusivamente quando a operação retorna confirmação de execução.
+
+Respostas ambíguas, contraditórias, condicionais ou referentes a outro pedido não autorizam o cancelamento. Quando a classificação do Gemini falha ou retorna um valor inesperado, o resultado é tratado como `UNCLEAR`.
+
+**Proteções adicionais:**
+
+- Instruções presentes em mensagens de clientes ou dados externos não devem substituir as regras do sistema.
+- Chamadas inválidas de ferramentas são tratadas como falhas de processamento.
+- O agente possui limite de três rodadas de execução de ferramentas.
+- O atendimento utiliza um limite de tempo de 60 segundos para as chamadas ao modelo.
+- Quando não consegue concluir uma solicitação, o agente apresenta uma resposta de contingência e pode oferecer encaminhamento para atendimento humano.
+
+Essas medidas reduzem o risco de operações indevidas, mas não eliminam todas as limitações de modelos generativos ou substituem autenticação e autorização adequadas para produção.
+
 ## Como executar o projeto
 
 O projeto pode ser executado localmente com Node.js ou por meio do Docker Compose.
@@ -188,6 +216,28 @@ docker compose down
 
 **Observação:** os pedidos e as confirmações temporárias são mantidos em memória. Seus estados não persistem após a recriação ou reinicialização do processo da aplicação.
 
+## Dados simulados e cenários de demonstração
+
+O projeto utiliza pedidos fictícios armazenados em memória para demonstrar as regras de atendimento e cancelamento.
+
+| Cliente | Pedido | Estado inicial | Comportamento esperado |
+|---|---|---|---|
+| `CUS-001` | `ORD-001` | `processing` | Permite solicitar cancelamento, mediante confirmação explícita. |
+| `CUS-002` | `ORD-002` | `shipped` | Não permite cancelamento, pois o pedido já foi enviado. |
+| `CUS-003` | `ORD-003` | `cancelled` | Não permite novo cancelamento, pois o pedido já está cancelado. |
+
+### Como testar
+
+A interface web utiliza automaticamente a identidade fictícia `CUS-001`, permitindo testar o atendimento conversacional e o cancelamento do pedido `ORD-001`.
+
+Para testar o atendimento como outros clientes, envie requisições ao endpoint `POST /chat`, informando o `customerId` correspondente e a mensagem desejada. A documentação Swagger apresenta os endpoints disponíveis.
+
+O sistema verifica se o pedido pertence ao cliente informado antes de disponibilizar informações ou executar operações.
+
+**Importante:** a identificação do cliente é simulada. O campo `customerId` é fornecido pela aplicação cliente e não representa autenticação real. Em produção, a identidade deverá ser obtida de uma sessão autenticada e validada pelo backend.
+
+Os pedidos e seus estados são armazenados em memória. Portanto, cancelamentos realizados durante os testes são perdidos quando o processo da aplicação é reiniciado.
+
 ## API REST
 
 O projeto disponibiliza os seguintes endpoints:
@@ -225,7 +275,7 @@ npm test
 
 Na última validação da branch `develop`, o projeto apresentou:
 
-**69 testes aprovados em 11 arquivos de teste.**
+**78 testes aprovados em 12 arquivos de teste.**
 
 Os testes abrangem:
 

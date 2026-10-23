@@ -36,7 +36,7 @@ As decisões abaixo são hipóteses técnicas para viabilizar o protótipo. Não
 
 1. Os pedidos serão simulados em memória, sem banco de dados.
 2. Cada pedido terá um identificador único e um status.
-3. Os status iniciais do protótipo serão `PROCESSING`, `SHIPPED` e `CANCELLED`, correspondentes a em processamento, enviado e cancelado.
+3. Os status iniciais do protótipo serão `processing`, `shipped` e `cancelled`, correspondentes a em processamento, enviado e cancelado.
 4. A API principal será a única responsável por autorizar e efetivar o cancelamento.
 5. A confirmação deverá ocorrer na conversa atual, estar claramente relacionada ao pedido e à intenção de cancelar, e terá validade provisória de cinco minutos. Após esse prazo, será necessário iniciar uma nova solicitação de cancelamento.
 6. Se o pedido não for encontrado, a API retornar erro ou o status não for reconhecido, o agente não executará o cancelamento.
@@ -52,7 +52,7 @@ As decisões abaixo são hipóteses técnicas para viabilizar o protótipo. Não
 | Identificador do pedido ausente | Solicitar a informação necessária. |
 | Pedido não encontrado | Informar que não foi possível localizar o pedido. |
 | Pedido em processamento e cliente ainda não confirmou | Solicitar confirmação explícita. |
-| Pedido em processamento e cliente confirmou | Solicitar o cancelamento à API principal. |
+| Pedido em processamento e cliente confirmou | Validar a confirmação e as regras no backend antes de cancelar. |
 | Pedido enviado | Recusar o cancelamento automatizado. |
 | Pedido já cancelado | Informar o status atual, sem alegar um novo cancelamento. |
 | Status desconhecido | Não cancelar e encaminhar para atendimento humano. |

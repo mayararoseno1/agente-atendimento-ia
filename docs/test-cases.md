@@ -76,7 +76,9 @@ As evidências indicadas são referências de implementação ou de testes ident
 
 ### Testes automatizados
 
-O projeto contém 11 arquivos de testes e, na última execução informada, 69 testes foram aprovados.
+Na última validação realizada, o projeto apresentou **78 testes aprovados em 12 arquivos de teste**.
+
+Os testes automatizados abrangem regras de negócio, endpoints HTTP, ferramentas do agente, confirmação de cancelamento, autorização, validação de entradas e tratamento de falhas.
 
 Arquivos relevantes:
 
@@ -91,6 +93,7 @@ Arquivos relevantes:
 - `tests/productService.test.ts`: integração externa, falhas e validação de respostas.
 - `tests/productTools.test.ts`: consultas de produtos via ferramentas.
 - `tests/cancellationNotificationService.test.ts`: mensagens de lembrete e expiração.
+- `tests/cancellationIntentService.test.ts`: classificação das intenções de confirmação, recusa e respostas ambíguas ou inseguras.
 
 Comando de execução:
 
